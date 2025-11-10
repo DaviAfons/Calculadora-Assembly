@@ -1,111 +1,183 @@
 # 🧮 Calculadora em Assembly (x86-64)
 
-Este projeto implementa uma **calculadora interativa** escrita em **Assembly NASM (x86-64)** para sistemas **Linux**, com suporte a **operações básicas** de aritmética — soma, subtração, multiplicação e divisão — utilizando **entradas do teclado** e **saídas no terminal** via chamadas de sistema (syscalls).
+Uma **calculadora simples de console** escrita em **Assembly NASM (x86-64)** para **Linux**.
+
+Este projeto é um **exercício de estudo** para demonstrar os fundamentos da programação em Assembly, incluindo:
+- Interação com o kernel (syscalls)
+- Manipulação de strings
+- Conversão de tipos numéricos
+- Estruturação de um projeto em múltiplos arquivos
+- Modularização e reutilização de código
+
+---
+
+## 🚀 Como Rodar
+
+Este projeto foi desenvolvido e testado em um ambiente **Linux (Ubuntu)** e depende das ferramentas de build `make`, `nasm` e `ld`.
+
+### 🧰 1. Pré-requisitos
+
+Instale as ferramentas necessárias:
+```bash
+sudo apt update
+sudo apt install make nasm binutils
+````
+
+### ⚙️ 2. Compilação
+
+Com as ferramentas instaladas, basta usar o `Makefile` para compilar o projeto.
+No diretório raiz do projeto, execute:
+
+```bash
+make
+```
+
+O comando irá:
+
+* Montar os arquivos `.asm` em `.o`
+* Lincar (`ld`) os objetos em um executável final chamado `calc`
+
+### ▶️ 3. Execução
+
+Após a compilação, execute:
+
+```bash
+./calc
+```
+
+Você verá o menu principal da calculadora.
 
 ---
 
 ## 📁 Estrutura do Projeto
 
 ```
-src/
-├── main.asm           # Programa principal (menu e lógica da calculadora)
-└── lib/
-    └── utils.asm      # Biblioteca com funções auxiliares (E/S e conversão)
-calc                   # Executável final
-main.o                 # Objeto do main.asm
-utils.o                # Objeto do utils.asm
-makefile               # Script de compilação automática
+.
+├── Makefile             # Orquestra a compilação
+└── src/
+    ├── main.asm         # Ponto de entrada, menu e lógica das operações
+    └── lib/
+        └── utils.asm    # Funções de biblioteca (E/S, conversões)
+```
+
+Arquivos adicionais após a compilação:
+
+```
+calc       # Executável final
+main.o     # Objeto de main.asm
+utils.o    # Objeto de utils.asm
 ```
 
 ---
 
-## ⚙️ Funcionalidades
+## 🧩 Lógica e Estrutura do Programa
 
-* Exibe um **menu interativo** com as opções:
-
-  ```
-  Calculadora Assembly
-  1) Soma
-  2) Subtração
-  3) Multiplicação
-  4) Divisão
-  0) Sair
-  ```
-
-* Solicita dois números inteiros do usuário.
-
-* Executa a operação escolhida.
-
-* Exibe o resultado no terminal.
-
-* Trata **divisão por zero**, exibindo mensagem de erro.
-
-* Retorna ao menu após cada operação.
+O programa foi dividido em dois módulos principais e um Makefile, com o objetivo de tornar o código mais organizado e legível.
 
 ---
 
-## 🧩 Principais Funções
+### 1️⃣ `src/main.asm` — O Cérebro da Aplicação
 
-### 📘 `main.asm`
+Este arquivo contém o ponto de entrada (`_start`), o menu e a lógica das operações.
 
-Arquivo principal responsável por:
+#### Estrutura principal
 
-* Mostrar o menu e ler a opção do usuário.
-* Chamar as rotinas da biblioteca (`utils.asm`).
-* Executar as operações matemáticas.
-* Controlar o fluxo do programa (loop principal e saída).
+* **Seção `.data`** — mensagens e textos constantes (menu, prompts, mensagens de erro).
+* **Seção `.bss`** — reserva de memória (`inbuf`) para leitura da entrada.
+* **Seção `.text`** — código executável.
 
-### ⚙️ `utils.asm`
+#### Loop principal (`main_loop`)
 
-Biblioteca com funções auxiliares reutilizáveis:
+1. Mostra o menu no console (`print_cstr`).
+2. Lê a opção do usuário (`read_sys`).
+3. Compara o caractere digitado (`cmp` e `je`) e salta para a operação correspondente.
+4. Após o cálculo, retorna ao menu.
 
-| Função        | Descrição                                                                   |
-| ------------- | --------------------------------------------------------------------------- |
-| `read_sys`    | Lê entrada do teclado (`sys_read`)                                          |
-| `write_sys`   | Escreve texto no terminal (`sys_write`)                                     |
-| `print_cstr`  | Imprime uma string terminada em `0`                                         |
-| `atoi_simple` | Converte uma string em número inteiro (sem sinal e com suporte a negativos) |
-| `print_int`   | Converte um número inteiro para string e imprime                            |
+#### Operações disponíveis
+
+| Opção | Operação      | Instrução         | Observação                                        |
+| ----- | ------------- | ----------------- | ------------------------------------------------- |
+| 1     | Soma          | `add`             | Soma dois inteiros                                |
+| 2     | Subtração     | `sub`             | Subtrai o segundo do primeiro                     |
+| 3     | Multiplicação | `imul`            | Multiplica dois inteiros                          |
+| 4     | Divisão       | `idiv`            | Divide com tratamento de erro se divisor for zero |
+| 0     | Sair          | syscall `exit(0)` | Encerra o programa                                |
+
+Cada bloco `.opX`:
+
+1. Pede o primeiro número (`prompt1`).
+2. Lê e converte para inteiro (`read_sys` + `atoi_simple`).
+3. Pede o segundo número (`prompt2`) e faz o mesmo.
+4. Executa a operação aritmética.
+5. Imprime o resultado (`print_int`).
+6. Retorna ao `main_loop`.
 
 ---
 
-## 🧠 Conceitos Envolvidos
+### 2️⃣ `src/lib/utils.asm` — Biblioteca de Funções Auxiliares
 
-* **Manipulação de syscalls** (`read`, `write`, `exit`).
-* **Conversão entre texto e número** (ASCII ↔ inteiro).
-* **Estruturas de controle** (loops, comparações e saltos).
-* **Seções de dados, texto e BSS** (`.data`, `.text`, `.bss`).
-* **Passagem de parâmetros via registradores** conforme a ABI System V AMD64.
+Este arquivo implementa as funções básicas usadas por `main.asm`.
+As funções são exportadas com `global` e importadas com `extern`.
+
+| Função        | Descrição                                                           |
+| ------------- | ------------------------------------------------------------------- |
+| `read_sys`    | Wrapper para syscall `read(0, buffer, len)` — lê entrada do usuário |
+| `write_sys`   | Wrapper para syscall `write(fd, buffer, len)` — escreve no terminal |
+| `print_cstr`  | Imprime uma string terminada em `0` (estilo C)                      |
+| `atoi_simple` | Converte string em número inteiro (suporta negativos)               |
+| `print_int`   | Converte um inteiro para string e imprime no terminal               |
+
+#### 🔍 Detalhes das principais funções:
+
+* **`print_cstr`**
+  Calcula o tamanho da string até o byte nulo (`0`) e a imprime via syscall `write`.
+
+* **`atoi_simple`**
+
+  * Ignora espaços em branco.
+  * Detecta sinal `-` ou `+`.
+  * Converte caractere por caractere de ASCII para número (`'0'` a `'9'`).
+  * Multiplica o acumulador por 10 a cada novo dígito para formar o número completo.
+
+* **`print_int`**
+
+  * Divide o valor por 10 repetidamente para extrair os dígitos (restos da divisão).
+  * Armazena-os no buffer `outbuf` em ordem inversa.
+  * Inverte o conteúdo para a ordem correta antes de imprimir.
+  * Adiciona `'\n'` ao final.
 
 ---
 
-## 🛠️ Compilação e Execução
+### 3️⃣ `Makefile` — O Construtor Automático
 
-### 🔧 Pré-requisitos
+O `Makefile` automatiza a compilação e o link:
 
-* Linux (qualquer distribuição compatível com ELF 64 bits)
-* [NASM](https://www.nasm.us/) assembler
-* [ld](https://man7.org/linux/man-pages/man1/ld.1.html) (linker padrão)
+#### Regras típicas:
 
-### 💻 Compilar manualmente
+```makefile
+all: calc
 
-```bash
-nasm -f elf64 src/lib/utils.asm -o utils.o
-nasm -f elf64 src/main.asm -o main.o
-ld main.o utils.o -o calc
+calc: main.o utils.o
+	ld main.o utils.o -o calc
+
+main.o: src/main.asm
+	nasm -f elf64 src/main.asm -o main.o
+
+utils.o: src/lib/utils.asm
+	nasm -f elf64 src/lib/utils.asm -o utils.o
+
+clean:
+	rm -f *.o calc
 ```
 
-### ▶️ Executar
-
-```bash
-./calc
-```
+* **`make`** — compila e gera o executável `calc`.
+* **`make clean`** — remove binários e objetos antigos.
 
 ---
 
-## 📄 Exemplo de Execução
+## 💻 Exemplo de Execução
 
-```
+```text
 Calculadora Assembly
 1) Soma
 2) Subtracao
@@ -129,6 +201,18 @@ Digite o segundo inteiro: 0
 Erro: divisao por zero
 ```
 
+---
+
+## 🧠 Conceitos Envolvidos
+
+* Syscalls Linux (`read`, `write`, `exit`)
+* Manipulação de buffers e strings
+* Conversão ASCII ↔ Inteiro
+* Estruturação modular em Assembly
+* Convenção de chamadas System V AMD64 (uso de registradores)
+* Controle de fluxo (`cmp`, `jmp`, `je`, `jne`, etc.)
+
+---
 
 ## 👨‍💻 Autor
 
