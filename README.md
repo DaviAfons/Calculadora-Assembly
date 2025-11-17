@@ -1,6 +1,4 @@
-Aqui está o `README.md` atualizado, refletindo as novas operações (Resto, Potenciação), a refatoração (com `get_number_from_user`) e o tratamento de erros (Overflow, Expoente Negativo).
 
------
 
 # 🧮 Calculadora em Assembly (x86-64)
 
